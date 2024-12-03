@@ -4,9 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,38 +14,41 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.rememberWindowState
 import com.konyaco.fluent.FluentTheme
 import com.konyaco.fluent.component.*
 import com.konyaco.fluent.icons.Icons
 import com.konyaco.fluent.icons.filled.Send
 import com.konyaco.fluent.icons.regular.*
 import com.konyaco.fluent.surface.Card
-import data.Version
 import data.parseDisplayName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.skia.Point
 import ui.component.BetterTextField
+import ui.nativelook.*
 import viewmodel.AppViewModel
+import java.awt.MouseInfo
+import java.awt.Toolkit
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, UnstableWindowBackdropApi::class)
 @Composable
 fun InstallationsPage(viewModel: AppViewModel) {
     val coroutineScope = rememberCoroutineScope()
@@ -277,10 +278,32 @@ fun InstallationsPage(viewModel: AppViewModel) {
                     var value by remember { mutableStateOf(TextFieldValue()) }
                     BetterTextField(value, onValueChange = { value = it }, trailingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.width(256.dp), singleLine = true, placeholder = { Text("Search versions...") })
                     Spacer(Modifier.width(8.dp))
-                    DropDownButton(
-                        onClick = {  },
-                        content = { Icon(Icons.Default.Filter, contentDescription = null, modifier = Modifier.size(24.dp)) }
+
+                    MenuFlyoutContainer(
+                        flyout = {
+                            MenuFlyoutItem(
+                                text = { Text("Send") },
+                                onClick = { isFlyoutVisible = false },
+                                icon = { Icon(Icons.Filled.Send, contentDescription = "Send", modifier = Modifier.size(20.dp)) })
+                            MenuFlyoutItem(
+                                text = { Text("Reply") },
+                                onClick = { isFlyoutVisible = false },
+                                icon = { Icon(Icons.Default.MailArrowDoubleBack, contentDescription = "Reply", modifier = Modifier.size(20.dp)) })
+                            MenuFlyoutItem(
+                                text = { Text("Reply All") },
+                                onClick = { isFlyoutVisible = false },
+                                icon = { Icon(Icons.Default.MailArrowDoubleBack, contentDescription = "Reply All", modifier = Modifier.size(20.dp)) })
+                        },
+                        content = {
+                            DropDownButton(
+                                onClick = { isFlyoutVisible = !isFlyoutVisible },
+                                content = { Icon(Icons.Default.Mail, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                            )
+                        },
+                        adaptivePlacement = true,
+                        placement = FlyoutPlacement.Auto
                     )
+
                 }
                 Spacer(Modifier.height(16.dp))
                 val displayedVersions = remember { mutableStateOf(viewModel.launcherInstance.versions.filter { !it.isInstalled }) }

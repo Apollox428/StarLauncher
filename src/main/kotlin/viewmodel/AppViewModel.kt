@@ -11,7 +11,7 @@ import kotlinx.coroutines.*
 import utils.Launcher
 import java.sql.Time
 
-class AppViewModel(mainViewModel: MainViewModel) {
+class AppViewModel(val mainViewModel: MainViewModel) {
 
     val launcherInstance = Launcher(mainViewModel, this)
 
