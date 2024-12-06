@@ -15,7 +15,8 @@ data class Version(
     var loaderType: LoaderType,
     var loaderVersion: String = "latest",
     var isInstalled: Boolean,
-    val flags: String = ""
+    val flags: String = "",
+    val friendlyName: String = parseDisplayName(identifier, type, loaderType)
 )
 
 enum class VersionType { ALPHA, BETA, RELEASE, SNAPSHOT }

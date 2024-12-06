@@ -7,6 +7,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -151,18 +153,20 @@ fun HomeScreen(viewModel: MainViewModel, appViewModel: AppViewModel) {
             selected = selItem == "Installations",
             expandItems = serversExpanded,
             items = {
-                for (installation in viewModel.appViewModel!!.launcherInstance.installations) {
-                    SideNavItem(
-                        icon = { Icon(imageVector = Icons.Regular.Cube, contentDescription = installation.displayName) },
-                        content = { Text(installation.displayName) },
-                        onClick = {
-                            appViewModel.currentInstallation.value = installation
-                            appViewModel.setPage(Page.INSTALLATION, installation.id)
-                            selItem = installation.id
-                            expanded = false
-                        },
-                        selected = selItem == installation.id
-                    )
+                LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(), userScrollEnabled = false) {
+                    items(viewModel.appViewModel!!.launcherInstance.installations) { installation ->
+                        SideNavItem(
+                            icon = { Icon(imageVector = Icons.Regular.Cube, contentDescription = installation.displayName) },
+                            content = { Text(installation.displayName) },
+                            onClick = {
+                                appViewModel.currentInstallation.value = installation
+                                appViewModel.setPage(Page.INSTALLATION, installation.id)
+                                selItem = installation.id
+                                expanded = false
+                            },
+                            selected = selItem == installation.id
+                        )
+                    }
                 }
                 SideNavItem(
                     icon = { Icon(imageVector = Icons.Regular.Add, contentDescription = "Add new installation") },

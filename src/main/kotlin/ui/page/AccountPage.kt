@@ -11,17 +11,16 @@ import viewmodel.AppViewModel
 
 @Composable
 fun AccountPage(viewModel: AppViewModel) {
+    val textColor = Color(FluentTheme.colors.text.text.primary.value)
     Column(Modifier.fillMaxSize().padding(32.dp)) {
-        Text(viewModel.parseTimestamp(System.currentTimeMillis()), style = FluentTheme.typography.title, color = Color(
-            FluentTheme.colors.text.text.primary.value)
-        )
+        Text("Account", style = FluentTheme.typography.title, color = textColor)
         Spacer(Modifier.height(16.dp))
-        Text("Recently opened", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+        Text("Recently opened", style = FluentTheme.typography.subtitle, color = textColor)
         Spacer(Modifier.height(16.dp))
-        Text("Recent presets", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+        Text("Recent presets", style = FluentTheme.typography.subtitle, color = textColor)
         Spacer(Modifier.height(16.dp))
-        Text("Quick tips", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+        Text("Quick tips", style = FluentTheme.typography.subtitle, color = textColor)
         Spacer(Modifier.height(16.dp))
-        Text("Community creations", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+        Text("Community creations", style = FluentTheme.typography.subtitle, color = textColor)
     }
 }

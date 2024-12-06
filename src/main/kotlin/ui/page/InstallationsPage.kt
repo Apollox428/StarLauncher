@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -38,7 +39,10 @@ import com.konyaco.fluent.component.*
 import com.konyaco.fluent.icons.Icons
 import com.konyaco.fluent.icons.filled.Send
 import com.konyaco.fluent.icons.regular.*
+import com.konyaco.fluent.scheme.VisualState
+import com.konyaco.fluent.scheme.collectVisualState
 import com.konyaco.fluent.surface.Card
+import data.getDisplayName
 import data.parseDisplayName
 import kotlinx.coroutines.launch
 import ui.component.BetterTextField
@@ -46,12 +50,15 @@ import ui.nativelook.*
 import viewmodel.AppViewModel
 import java.awt.MouseInfo
 import java.awt.Toolkit
+import java.util.function.Predicate
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalComposeUiApi::class, UnstableWindowBackdropApi::class)
 @Composable
 fun InstallationsPage(viewModel: AppViewModel) {
     val coroutineScope = rememberCoroutineScope()
+    val textColor = Color(FluentTheme.colors.text.text.primary.value)
+    val installations = remember { viewModel.launcherInstance.installations }
     Column(Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
         var scrollEnabled by remember { mutableStateOf(true) }
@@ -74,7 +81,7 @@ fun InstallationsPage(viewModel: AppViewModel) {
                     .padding(32.dp)
             ) {
                 Row(Modifier.fillMaxWidth()) {
-                    Text("Installations", style = FluentTheme.typography.title, color = Color(FluentTheme.colors.text.text.primary.value))
+                    Text("Installations", style = FluentTheme.typography.title, color = textColor)
                     Spacer(Modifier.weight(1f))
                     AccentButton(onClick = {}) {
                         Icon(Icons.Default.Add, null)
@@ -82,13 +89,18 @@ fun InstallationsPage(viewModel: AppViewModel) {
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Text("Recently opened", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+                Text("Recently opened", style = FluentTheme.typography.subtitle, color = textColor)
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth()) {
-                    Text("Your installations", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+                    Text("Your installations", style = FluentTheme.typography.subtitle, color = textColor)
                     Spacer(Modifier.weight(1f))
-                    var buttonArrowVisible by remember { mutableStateOf(false) }
-                    HyperlinkButton(onClick = {}, modifier = Modifier.animateContentSize(tween(if (buttonArrowVisible) 0 else 100)).onPointerEvent(PointerEventType.Enter) { buttonArrowVisible = true }.onPointerEvent(PointerEventType.Exit) { buttonArrowVisible = false }) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val visualState = interactionSource.collectVisualState(false)
+                    val buttonArrowVisible = when (visualState) {
+                        VisualState.Hovered, VisualState.Pressed -> true
+                        else -> false
+                    }
+                    HyperlinkButton(onClick = {}, modifier = Modifier.animateContentSize(tween(if (buttonArrowVisible) 0 else 100)), interaction = interactionSource) {
                         Text("View all")
                         AnimatedVisibility(
                             visible = buttonArrowVisible,
@@ -102,13 +114,23 @@ fun InstallationsPage(viewModel: AppViewModel) {
                 Spacer(Modifier.height(16.dp))
                 Box(Modifier.fillMaxWidth()) {
                     val rowScrollState = rememberLazyListState()
+                    val canScrollBackward by remember {
+                        derivedStateOf {
+                            !rowScrollState.canScrollBackward
+                        }
+                    }
+                    val canScrollForward by remember {
+                        derivedStateOf {
+                            !rowScrollState.canScrollForward
+                        }
+                    }
                     val rowStartFadeColor = animateColorAsState(
-                        targetValue = if (!rowScrollState.canScrollBackward) Color.Black else Color.Transparent,
-                        animationSpec = if (!rowScrollState.canScrollBackward) tween(10) else tween(25)
+                        targetValue = if (canScrollBackward) Color.Black else Color.Transparent,
+                        animationSpec = if (canScrollBackward) tween(10) else tween(25)
                     )
                     val rowEndFadeColor = animateColorAsState(
-                        targetValue = if (!rowScrollState.canScrollForward) Color.Black else Color.Transparent,
-                        animationSpec = if (!rowScrollState.canScrollForward) tween(10) else tween(25)
+                        targetValue = if (canScrollForward) Color.Black else Color.Transparent,
+                        animationSpec = if (canScrollForward) tween(10) else tween(25)
                     )
                     var scrollToRow by remember { mutableStateOf(0) }
                     LaunchedEffect(scrollToRow) {
@@ -162,7 +184,12 @@ fun InstallationsPage(viewModel: AppViewModel) {
                             state = rowScrollState,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(viewModel.launcherInstance.installations) { installation ->
+                            items(
+                                installations,
+                                key = { installation ->
+                                    installation.id
+                                }
+                            ) { installation ->
                                 Card(
                                     onClick = {
 
@@ -179,10 +206,15 @@ fun InstallationsPage(viewModel: AppViewModel) {
                 }
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth()) {
-                    Text("Newly added", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+                    Text("Newly added", style = FluentTheme.typography.subtitle, color = textColor)
                     Spacer(Modifier.weight(1f))
-                    var buttonArrowVisible by remember { mutableStateOf(false) }
-                    HyperlinkButton(onClick = {}, modifier = Modifier.animateContentSize(tween(if (buttonArrowVisible) 0 else 100)).onPointerEvent(PointerEventType.Enter) { buttonArrowVisible = true }.onPointerEvent(PointerEventType.Exit) { buttonArrowVisible = false }) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val visualState = interactionSource.collectVisualState(false)
+                    val buttonArrowVisible = when (visualState) {
+                        VisualState.Hovered, VisualState.Pressed -> true
+                        else -> false
+                    }
+                    HyperlinkButton(onClick = {}, modifier = Modifier.animateContentSize(tween(if (buttonArrowVisible) 0 else 100)), interaction = interactionSource) {
                         Text("View more")
                         AnimatedVisibility(
                             visible = buttonArrowVisible,
@@ -195,14 +227,25 @@ fun InstallationsPage(viewModel: AppViewModel) {
                 }
                 Spacer(Modifier.height(16.dp))
                 Box(Modifier.fillMaxWidth()) {
+                    val newlyAddedVersions = remember { viewModel.launcherInstance.versions.take(10) }
                     val rowScrollState = rememberLazyListState()
+                    val canScrollBackward by remember {
+                        derivedStateOf {
+                            !rowScrollState.canScrollBackward
+                        }
+                    }
+                    val canScrollForward by remember {
+                        derivedStateOf {
+                            !rowScrollState.canScrollForward
+                        }
+                    }
                     val rowStartFadeColor = animateColorAsState(
-                        targetValue = if (!rowScrollState.canScrollBackward) Color.Black else Color.Transparent,
-                        animationSpec = if (!rowScrollState.canScrollBackward) tween(10) else tween(25)
+                        targetValue = if (canScrollBackward) Color.Black else Color.Transparent,
+                        animationSpec = if (canScrollBackward) tween(10) else tween(25)
                     )
                     val rowEndFadeColor = animateColorAsState(
-                        targetValue = if (!rowScrollState.canScrollForward) Color.Black else Color.Transparent,
-                        animationSpec = if (!rowScrollState.canScrollForward) tween(10) else tween(25)
+                        targetValue = if (canScrollForward) Color.Black else Color.Transparent,
+                        animationSpec = if (canScrollForward) tween(10) else tween(25)
                     )
                     var scrollToRow by remember { mutableStateOf(0) }
                     LaunchedEffect(scrollToRow) {
@@ -256,7 +299,12 @@ fun InstallationsPage(viewModel: AppViewModel) {
                             state = rowScrollState,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(viewModel.launcherInstance.versions.take(10)) { version ->
+                            items(
+                                items = newlyAddedVersions,
+                                key = { version ->
+                                    version.identifier
+                                }
+                            ) { version ->
                                 Card(
                                     onClick = {
 
@@ -265,7 +313,7 @@ fun InstallationsPage(viewModel: AppViewModel) {
                                         .size(204.dp, 96.dp)
 
                                 ) {
-                                    Text(parseDisplayName(version))
+                                    Text(version.getDisplayName())
                                 }
                             }
                         }
@@ -273,7 +321,7 @@ fun InstallationsPage(viewModel: AppViewModel) {
                 }
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth()) {
-                    Text("Versions", style = FluentTheme.typography.subtitle, color = Color(FluentTheme.colors.text.text.primary.value))
+                    Text("Versions", style = FluentTheme.typography.subtitle, color = textColor)
                     Spacer(Modifier.weight(1f))
                     var value by remember { mutableStateOf(TextFieldValue()) }
                     BetterTextField(value, onValueChange = { value = it }, trailingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.width(256.dp), singleLine = true, placeholder = { Text("Search versions...") })
@@ -306,16 +354,26 @@ fun InstallationsPage(viewModel: AppViewModel) {
 
                 }
                 Spacer(Modifier.height(16.dp))
-                val displayedVersions = remember { mutableStateOf(viewModel.launcherInstance.versions.filter { !it.isInstalled }) }
+                val displayedVersions = remember { viewModel.launcherInstance.versions.filter { !it.isInstalled } }
                 Column(Modifier.fillMaxWidth().height(1024.dp)) {
                     val gridScrollState = rememberLazyGridState()
+                    val canScrollBackward by remember {
+                        derivedStateOf {
+                            !gridScrollState.canScrollBackward
+                        }
+                    }
+                    val canScrollForward by remember {
+                        derivedStateOf {
+                            !gridScrollState.canScrollForward
+                        }
+                    }
                     val gridTopFadeColor = animateColorAsState(
-                        targetValue = if (!gridScrollState.canScrollBackward) Color.Black else Color.Transparent,
-                        animationSpec = if (!gridScrollState.canScrollBackward) tween(10) else tween(25)
+                        targetValue = if (canScrollBackward) Color.Black else Color.Transparent,
+                        animationSpec = if (canScrollBackward) tween(10) else tween(25)
                     )
                     val gridBottomFadeColor = animateColorAsState(
-                        targetValue = if (!gridScrollState.canScrollForward) Color.Black else Color.Transparent,
-                        animationSpec = if (!gridScrollState.canScrollForward) tween(10) else tween(25)
+                        targetValue = if (canScrollForward) Color.Black else Color.Transparent,
+                        animationSpec = if (canScrollForward) tween(10) else tween(25)
                     )
                     ScrollbarContainer(
                         adapter = rememberScrollbarAdapter(gridScrollState),
@@ -356,7 +414,12 @@ fun InstallationsPage(viewModel: AppViewModel) {
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             state = gridScrollState
                         ) {
-                            items(displayedVersions.value) { version ->
+                            items(
+                                items = displayedVersions,
+                                key = { version ->
+                                    version.identifier
+                                }
+                            ) { version ->
                                 Card(
                                     onClick = {
 
@@ -365,7 +428,7 @@ fun InstallationsPage(viewModel: AppViewModel) {
                                         .size(172.dp, 172.dp)
 
                                 ) {
-                                    Text(parseDisplayName(version))
+                                    Text(version.friendlyName)
                                 }
                             }
                         }
