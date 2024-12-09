@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -20,10 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.*
 import com.konyaco.fluent.Colors
 import com.konyaco.fluent.FluentTheme
 import com.konyaco.fluent.component.*
@@ -80,6 +78,7 @@ fun App(viewModel: MainViewModel) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
     val viewModel = remember { MainViewModel(this) }
     val appViewModel = remember { AppViewModel(viewModel) }
@@ -115,6 +114,8 @@ fun main() = application {
 
     val taskbar = Taskbar.getTaskbar()
 
+    val currentException = remember { mutableStateOf<Throwable?>(null) }
+    val exceptionShown = remember { mutableStateOf(false) }
     Window(
         onCloseRequest = ::exitApplication,
         title = viewModel.title,
@@ -122,6 +123,16 @@ fun main() = application {
         state = state,
         visible = visible
     ) {
+
+        DisposableEffect(Unit) {
+            window.exceptionHandler = WindowExceptionHandler {
+                currentException.value = it
+                exceptionShown.value = true
+                println("Yo: " + it.localizedMessage)
+            }
+            onDispose {  }
+        }
+
         viewModel.connectTaskbar(taskbar, this.window)
 
         WindowStyle(
@@ -252,6 +263,28 @@ fun main() = application {
 
 
 
+    }
+
+    if (exceptionShown.value) {
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = viewModel.title,
+            icon = viewModel.icon,
+            state = state
+        ) {
+            WindowStyle(
+                backdropType = WindowBackdrop.MicaTabbed(isSystemInDarkTheme)
+            )
+            if (colors != null) {
+                FluentTheme(colors = colors!!) {
+                    Text("Something went wrong: ${currentException.value!!.localizedMessage}")
+                }
+            } else {
+                FluentTheme {
+                    Text("Something went wrong: ${currentException.value!!.localizedMessage}")
+                }
+            }
+        }
     }
 
 }

@@ -13,6 +13,7 @@ repositories {
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     maven("https://jitpack.io")
     maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+    maven("https://maven.google.com")
     google()
 }
 
@@ -21,7 +22,6 @@ dependencies {
     // compose.desktop.currentOs should be used in launcher-sourceSet
     // (in a separate module for demo project and in testMain).
     // With compose.desktop.common you will also lose @Preview functionality
-    implementation(compose.desktop.currentOs)
     implementation(compose.desktop.currentOs)
     implementation("net.java.dev.jna:jna-platform:5.14.0")
     implementation("com.github.alexfacciorusso:windows-registry-ktx:6a9b0b89d2")

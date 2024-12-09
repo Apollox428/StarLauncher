@@ -2,8 +2,11 @@ package ui.page
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,25 +18,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.rememberWindowState
 import com.konyaco.fluent.FluentTheme
 import com.konyaco.fluent.component.*
 import com.konyaco.fluent.icons.Icons
@@ -42,18 +36,15 @@ import com.konyaco.fluent.icons.regular.*
 import com.konyaco.fluent.scheme.VisualState
 import com.konyaco.fluent.scheme.collectVisualState
 import com.konyaco.fluent.surface.Card
+import data.Version
 import data.getDisplayName
-import data.parseDisplayName
 import kotlinx.coroutines.launch
 import ui.component.BetterTextField
-import ui.nativelook.*
+import ui.nativelook.UnstableWindowBackdropApi
 import viewmodel.AppViewModel
-import java.awt.MouseInfo
-import java.awt.Toolkit
-import java.util.function.Predicate
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalComposeUiApi::class, UnstableWindowBackdropApi::class)
+@OptIn(ExperimentalComposeUiApi::class, UnstableWindowBackdropApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun InstallationsPage(viewModel: AppViewModel) {
     val coroutineScope = rememberCoroutineScope()
@@ -320,18 +311,48 @@ fun InstallationsPage(viewModel: AppViewModel) {
                     }
                 }
                 Spacer(Modifier.height(16.dp))
+                val gridScrollState = rememberLazyGridState()
+                val canScrollBackward by remember {
+                    derivedStateOf {
+                        !gridScrollState.canScrollBackward
+                    }
+                }
+                val canScrollForward by remember {
+                    derivedStateOf {
+                        !gridScrollState.canScrollForward
+                    }
+                }
+                val gridTopFadeColor = animateColorAsState(
+                    targetValue = if (canScrollBackward) Color.Black else Color.Transparent,
+                    animationSpec = if (canScrollBackward) tween(10) else tween(25)
+                )
+                val gridBottomFadeColor = animateColorAsState(
+                    targetValue = if (canScrollForward) Color.Black else Color.Transparent,
+                    animationSpec = if (canScrollForward) tween(10) else tween(25)
+                )
                 Row(Modifier.fillMaxWidth()) {
                     Text("Versions", style = FluentTheme.typography.subtitle, color = textColor)
                     Spacer(Modifier.weight(1f))
                     var value by remember { mutableStateOf(TextFieldValue()) }
-                    BetterTextField(value, onValueChange = { value = it }, trailingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.width(256.dp), singleLine = true, placeholder = { Text("Search versions...") })
+                    BetterTextField(
+                        value,
+                        onValueChange = {
+                            value = it
+                            coroutineScope.launch {
+                                if (value.text.isNotBlank() || value.text.isNotBlank()) viewModel.searchVersions(value.text) else viewModel.displayedVersions.value = viewModel.launcherInstance.versions
+                            }
+                        },
+                        trailingIcon = { Icon(Icons.Default.Search, null) },
+                        modifier = Modifier.width(256.dp),
+                        singleLine = true,
+                        placeholder = { Text("Search versions...") }
+                    )
                     Spacer(Modifier.width(8.dp))
-
                     MenuFlyoutContainer(
                         flyout = {
                             MenuFlyoutItem(
                                 text = { Text("Send") },
-                                onClick = { isFlyoutVisible = false },
+                                onClick = { isFlyoutVisible = false; 0 / 0 },
                                 icon = { Icon(Icons.Filled.Send, contentDescription = "Send", modifier = Modifier.size(20.dp)) })
                             MenuFlyoutItem(
                                 text = { Text("Reply") },
@@ -354,27 +375,7 @@ fun InstallationsPage(viewModel: AppViewModel) {
 
                 }
                 Spacer(Modifier.height(16.dp))
-                val displayedVersions = remember { viewModel.launcherInstance.versions.filter { !it.isInstalled } }
-                Column(Modifier.fillMaxWidth().height(1024.dp)) {
-                    val gridScrollState = rememberLazyGridState()
-                    val canScrollBackward by remember {
-                        derivedStateOf {
-                            !gridScrollState.canScrollBackward
-                        }
-                    }
-                    val canScrollForward by remember {
-                        derivedStateOf {
-                            !gridScrollState.canScrollForward
-                        }
-                    }
-                    val gridTopFadeColor = animateColorAsState(
-                        targetValue = if (canScrollBackward) Color.Black else Color.Transparent,
-                        animationSpec = if (canScrollBackward) tween(10) else tween(25)
-                    )
-                    val gridBottomFadeColor = animateColorAsState(
-                        targetValue = if (canScrollForward) Color.Black else Color.Transparent,
-                        animationSpec = if (canScrollForward) tween(10) else tween(25)
-                    )
+                Column(Modifier.fillMaxWidth().heightIn(min = 256.dp, max = 512.dp)) {
                     ScrollbarContainer(
                         adapter = rememberScrollbarAdapter(gridScrollState),
                         modifier = Modifier.weight(1f)
@@ -415,10 +416,11 @@ fun InstallationsPage(viewModel: AppViewModel) {
                             state = gridScrollState
                         ) {
                             items(
-                                items = displayedVersions,
+                                items = viewModel.displayedVersions.value,
                                 key = { version ->
                                     version.identifier
-                                }
+                                },
+                                contentType = { it.type }
                             ) { version ->
                                 Card(
                                     onClick = {
@@ -426,7 +428,7 @@ fun InstallationsPage(viewModel: AppViewModel) {
                                     },
                                     modifier = Modifier
                                         .size(172.dp, 172.dp)
-
+                                        .animateItemPlacement()
                                 ) {
                                     Text(version.friendlyName)
                                 }
