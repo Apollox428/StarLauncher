@@ -1,0 +1,38 @@
+﻿<Page
+    x:Class="StarLauncher.Views.Instances"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:StarLauncher.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto">
+        <StackPanel x:Name="ContentStackPanel">
+            <Grid>
+                <Grid
+                    x:Name="HeroMaskedImageGrid"
+                    Height="400"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Top"
+                    SizeChanged="RefreshBackground" />
+                <TextBlock
+                    Margin="36,40,0,0"
+                    Style="{ThemeResource PageTitleTextBlockStyle}"
+                    Text="Instances" />
+            </Grid>
+            <ScrollViewer 
+                x:Name="OutputScrollViewer"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Auto"
+                Margin="10">
+                <StackPanel 
+                    x:Name="OutputPanel"
+                    Orientation="Vertical"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Top" />
+            </ScrollViewer>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

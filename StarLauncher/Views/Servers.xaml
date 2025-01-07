@@ -1,0 +1,41 @@
+﻿<Page
+    x:Class="StarLauncher.Views.Servers"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:StarLauncher.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:StarLauncher.Controls"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto">
+        <StackPanel>
+            <TextBlock
+                Margin="36,40,0,0"
+                Style="{ThemeResource PageTitleTextBlockStyle}"
+                Text="Servers" />
+            <GridView 
+                x:Name="ServerList"
+                SelectionMode="Extended"
+                Margin="32,8,32,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <GridView.ItemTemplate>
+                    <DataTemplate>
+                        <controls:CustomCard >
+                            <StackPanel Margin="20" VerticalAlignment="Center">
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding}" />
+                                <TextBlock Margin="0,4,0,0" Text="Description" MaxLines="1" />
+                            </StackPanel>
+                        </controls:CustomCard>
+                    </DataTemplate>
+                </GridView.ItemTemplate>
+
+            </GridView>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
